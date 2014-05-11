@@ -1,0 +1,37 @@
+CREATE TABLE `redhelp_db`.`USER_ACCOUNT` (
+  `U_ID` BIGINT NOT NULL,
+  `EMAIL` VARCHAR(30) NOT NULL,
+  `NAME` VARCHAR(30) NOT NULL,
+  `PASSWORD_ENCRYPTED` VARCHAR(30) NOT NULL,
+  `PHONE_NO` VARCHAR(15),
+  `REGISTER_DATE` DATETIME NOT NULL,
+  `LAST_UPDATED` DATETIME NOT NULL,
+  PRIMARY KEY (`U_ID`)
+)
+CHARACTER SET utf8;
+
+ALTER TABLE `redhelp_db`.`user_account` ADD UNIQUE INDEX uq_email(`EMAIL`);
+
+
+CREATE TABLE `redhelp_db`.`USER_ADDITIONAL_ACCOUNT` (
+  `UAA_ID` BIGINT,
+  `ACCOUNT_TYPE` BIGINT NOT NULL,
+  `EXTERNAL_ACCOUNT_ID` VARCHAR(100) NOT NULL,
+  `U_ID` BIGINT NOT NULL,
+  PRIMARY KEY (`UAA_ID`),
+  CONSTRAINT `fk_user_account` FOREIGN KEY `fk_user_account` (`U_ID`)
+    REFERENCES `user_account` (`U_ID`)
+)
+CHARACTER SET utf8;
+
+ALTER TABLE `redhelp_db`.`user_additional_account` ADD CONSTRAINT `fk_additional_account_type` FOREIGN KEY `fk_additional_account_type` (`ACCOUNT_TYPE`)
+    REFERENCES `user_additional_account_type` (`UAAT_ID`);
+
+
+
+CREATE TABLE `redhelp_db`.`USER_ADDITIONAL_ACCOUNT_TYPE` (
+  `UAAT_ID` BIGINT NOT NULL,
+  `NAME` VARCHAR(30) NOT NULL,
+  PRIMARY KEY (`UAAT_ID`)
+)
+CHARACTER SET utf8;

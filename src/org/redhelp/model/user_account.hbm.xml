@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+ 
+<hibernate-mapping>
+    <class name="org.redhelp.model.UserAccountModel" table="USER_ACCOUNT" >
+        <id name="u_id" type="java.lang.Long">
+            <column name="U_ID" />
+            <generator class="native" />
+        </id>
+        <property name="email" type="string">
+            <column name="EMAIL" length="10" not-null="true" unique="true" />
+        </property>
+        <property name="name" type="string">
+            <column name="NAME" length="20" not-null="true" unique="true" />
+        </property>
+        <property name="passwordEncrypted" type="string">
+            <column name="PASSWORD_ENCRYPTED" length="20" not-null="true" unique="true" />
+        </property>
+        <property name="phoneNo" type="string">
+            <column name="PHONE_NO" length="20" not-null="true" unique="true" />
+        </property>
+        <property name="registerDate" type="date">
+            <column name="REGISTER_DATE" length="20" not-null="true" unique="true" />
+        </property>
+        <property name="lastUpdatedDate" type="date">
+            <column name="LAST_UPDATED" length="20" not-null="true" unique="true" />
+        </property>
+    </class>
+</hibernate-mapping>
