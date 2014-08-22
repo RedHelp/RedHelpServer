@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+	<class name="org.redhelp.model.UserAdditionalAccountModel" table="USER_ADDITIONAL_ACCOUNT">
+		<id name="uaa_id" type="java.lang.Long">
+			<column name="UAA_ID" />
+			<generator class="native" />
+		</id>
+		<property name="externalAccountId" type="string">
+			<column name="EXTERNAL_ACCOUNT_ID" length="50" />
+		</property>
+		<many-to-one name="user_account" column="U_ID" unique="true"
+			class="org.redhelp.model.UserAccountModel" not-null="true" />
+		<many-to-one name="accountType" column="ACCOUNT_TYPE"
+			class="org.redhelp.model.UserAdditionalAccountTypeModel" not-null="true" />
+	</class>
+</hibernate-mapping>

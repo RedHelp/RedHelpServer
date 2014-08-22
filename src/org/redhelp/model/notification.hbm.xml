@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+ 
+<hibernate-mapping>
+    <class name="org.redhelp.model.NotificationModel" table="NOTIFICATIONS" >
+        <id name="n_id" type="java.lang.Long">
+            <column name="N_ID" />
+            <generator class="native" />
+        </id>
+        <property name="title" type="string">
+            <column name="TITLE" length="100"  />
+        </property>
+       
+        <property name="b_p_id" type="java.lang.Long">
+            <column name="b_p_id" />
+        </property>
+        
+        <property name="creation_datetime" type="timestamp">
+            <column name="CREATION_DATETIME" />
+        </property>
+        
+         <property name="read" type="boolean">
+            <column name="STATUS" />
+        </property>
+        
+        <property name="notification_type" column="NOTIFICATION_TYPE" >
+            <type name="org.hibernate.type.EnumType" >
+                <param name="enumClass">org.redhelp.common.types.NotificationTypes</param>
+                <param name="type">12</param>
+            </type>
+        </property> 
+        
+        <property name="b_r_id" type="java.lang.Long">
+            <column name="b_r_id" />
+        </property>
+        
+        <property name="requester_b_p_id" type="java.lang.Long">
+            <column name="requester_b_p_id" />
+        </property>
+        
+        <property name="e_id" type="java.lang.Long">
+            <column name="e_id" />
+        </property>
+        
+         <property name="message" type="string">
+            <column name="message" length="100"  />
+        </property>
+    </class>
+</hibernate-mapping>

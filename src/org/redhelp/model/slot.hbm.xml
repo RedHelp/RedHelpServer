@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+ 
+<hibernate-mapping>
+    <class name="org.redhelp.model.SlotModel" table="SLOTS" >
+        <id name="s_id" type="java.lang.Long">
+            <column name="S_ID" />
+            <generator class="native" />
+        </id>
+               
+        <property name="e_id" type="java.lang.Long">
+            <column name="e_id" />
+        </property>
+        
+        <property name="start_datetime" type="date">
+            <column name="START_DATETIME" />
+        </property>
+        <property name="end_datetime" type="date">
+            <column name="END_DATETIME" />
+        </property>
+        
+        <property name="max_attendees" type="int">
+            <column name="MAX_ATTENDEES"/>
+        </property>
+        
+        <property name="current_attendees" type="int">
+            <column name="CURRENT_ATTENDEES"/>
+        </property>
+        
+        <property name="max_volunteers" type="int">
+            <column name="MAX_VOLUNTEERS"/>
+        </property>
+        
+        <property name="current_volunteers" type="int">
+            <column name="CURRENT_VOLUNTEERS"/>
+        </property>
+        
+        <set name="users_coming" cascade="save-update" table="SLOT_PROFILE_JOIN_TABLE">
+            <key column="s_id"/>
+            <many-to-many column="b_p_id" class="org.redhelp.model.UserBloodProfileModel"/>
+        </set>
+    </class>
+</hibernate-mapping>

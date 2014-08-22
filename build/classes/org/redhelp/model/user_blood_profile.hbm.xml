@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+	<class name="org.redhelp.model.UserBloodProfileModel" table="USER_BLOOD_PROFILE">
+		<id name="b_p_id" type="java.lang.Long">
+			<column name="B_P_ID" />
+			<generator class="native" />
+		</id>
+		<property name="city" type="string">
+			<column name="CITY" length="10" />
+		</property>
+		<many-to-one name="user_account" column="U_ID" unique="true"
+			class="org.redhelp.model.UserAccountModel" not-null="true" cascade="all" />
+		<property name="last_known_location_lat" type="java.lang.Double">
+			<column name="LAST_KNOWN_LOCATION_LAT" />
+		</property>
+		<property name="last_known_location_long" type="java.lang.Double">
+			<column name="LAST_KNOWN_LOCATION_LONG" />
+		</property>
+		<property name="last_known_location_datetime" type="timestamp">
+			<column name="LAST_KNOWN_LOCATION_DATE_TIME" />
+		</property>
+		<property name="gender" column="GENDER">
+			<type name="org.hibernate.type.EnumType">
+				<param name="enumClass">org.redhelp.common.types.Gender</param>
+				<param name="type">12</param>
+			</type>
+		</property>
+		<property name="blood_group_type" column="BLOOD_GROUP">
+			<type name="org.hibernate.type.EnumType">
+				<param name="enumClass">org.redhelp.common.types.BloodGroupType</param>
+				<param name="type">12</param>
+			</type>
+		</property>
+		<property name="birth_date" type="date">
+			<column name="BIRTH_DATE" />
+		</property>
+
+		<set name="blood_requests" cascade="all" sort="natural">
+			<key column="b_p_id" />
+			<one-to-many class="org.redhelp.model.BloodRequestModel" />
+		</set>
+
+		<set name="notifications" cascade="all" sort="natural">
+			<key column="b_p_id" />
+			<one-to-many class="org.redhelp.model.NotificationModel" />
+		</set>
+
+		<set name="blood_requests_received" cascade="save-update" table="REQUEST_PROFILE">
+			<key column="b_p_id" />
+			<many-to-many column="b_r_id"
+				class="org.redhelp.model.BloodRequestModel" />
+		</set>
+
+		<set name="slots" cascade="save-update" table="SLOT_PROFILE_JOIN_TABLE">
+			<key column="b_p_id" />
+			<many-to-many column="s_id" class="org.redhelp.model.SlotModel" />
+		</set>
+		
+		<set name="related_users" cascade="all">
+            <key column="b_p_id"/>
+            <one-to-many class="org.redhelp.model.UsersRelationshipModel"/>
+        </set>
+
+	</class>
+</hibernate-mapping>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+ 
+<hibernate-mapping>
+    <class name="org.redhelp.model.BloodRequestModel" table="BLOOD_REQUEST" >
+        <id name="b_r_id" type="java.lang.Long">
+            <column name="B_R_ID" />
+            <generator class="native" />
+        </id>
+        <property name="patient_name" type="string">
+            <column name="PATIENT_NAME" length="50"  />
+        </property>
+        <property name="description" type="string">
+            <column name="DESCRIPTION" length="400"  />
+        </property>
+         <property name="phone_number" type="string">
+            <column name="PHONE_NUMBER" length="15"  />
+        </property>
+         <property name="units" type="string">
+            <column name="UNITS" length="10"  />
+        </property>
+        <property name="active" type="boolean">
+            <column name="ACTIVE" />
+        </property>
+        <property name="b_p_id" type="java.lang.Long">
+            <column name="b_p_id" />
+        </property>
+        <property name="creation_datetime" type="timestamp">
+            <column name="CREATION_DATETIME" />
+        </property>
+        
+        
+        <property name="gps_location_lat" type="java.lang.Double">
+            <column name="GPS_LOCATION_LAT"  />           
+        </property>
+        <property name="gps_location_long" type="java.lang.Double">
+            <column name="GPS_LOCATION_LONG"  />           
+        </property>
+        <property name="place_location_lat" type="java.lang.Double">
+            <column name="PLACE_LOCATION_LAT"  />           
+        </property>
+        <property name="place_location_long" type="java.lang.Double">
+            <column name="PLACE_LOCATION_LONG"  />           
+        </property>
+         <property name="place_string" type="string">
+            <column name="PLACE_STRING" length="200"  />
+        </property>
+        
+        <set name="set_blood_group" cascade="all">
+            <key column="b_r_id"/>
+            <one-to-many class="org.redhelp.model.BloodGroupsModel"/>
+        </set>
+        
+        <set name="blood_request_receivers_profiles" cascade="save-update" table="REQUEST_PROFILE">
+            <key column="b_r_id"/>
+            <many-to-many column="b_p_id" class="org.redhelp.model.UserBloodProfileModel"/>
+        </set>
+        
+        <property name="blood_requirement_type" column="BLOOD_REQUIREMENT_TYPE" >
+            <type name="org.hibernate.type.EnumType" >
+                <param name="enumClass">org.redhelp.common.types.BloodRequirementType</param>
+                <param name="type">12</param>
+            </type>
+        </property> 
+        
+    </class>
+</hibernate-mapping>

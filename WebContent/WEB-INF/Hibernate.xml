@@ -22,6 +22,15 @@ http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 		<property name="mappingResources">
 			<list>
 				<value>org/redhelp/model/user_account.hbm.xml</value>
+				<value>org/redhelp/model/user_blood_profile.hbm.xml</value>
+				<value>org/redhelp/model/user_additional_account.hbm.xml</value>
+				<value>org/redhelp/model/user_additional_account_type.hbm.xml</value>
+				<value>org/redhelp/model/blood_groups.hbm.xml</value>
+				<value>org/redhelp/model/blood_request.hbm.xml</value>
+				<value>org/redhelp/model/slot.hbm.xml</value>
+				<value>org/redhelp/model/event.hbm.xml</value>	
+				<value>org/redhelp/model/notification.hbm.xml</value>	
+				<value>org/redhelp/model/users_relationship.hbm.xml</value>	
 			</list>
 		</property>
 	</bean>

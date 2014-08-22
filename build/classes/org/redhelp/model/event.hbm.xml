@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+ 
+<hibernate-mapping>
+    <class name="org.redhelp.model.EventModel" table="EVENTS" >
+        <id name="e_id" type="java.lang.Long">
+            <column name="E_ID" />
+            <generator class="native" />
+        </id>
+        
+        <property name="b_p_id" type="java.lang.Long">
+            <column name="b_p_id" />
+        </property>
+        
+        <property name="creation_datetime" type="date">
+            <column name="CREATION_DATETIME" />
+        </property>
+         
+        <property name="active" type="boolean">
+            <column name="ACTIVE" />
+        </property>
+        
+        <property name="name" type="string">
+            <column name="NAME" length="50"  />
+        </property>
+        
+        <property name="phone_number" type="string">
+            <column name="PHONE_NUMBER" length="20"  />
+        </property>
+        
+        <property name="additional_email" type="string">
+            <column name="ADDITIONAL_EMAIL" length="25"  />
+        </property>
+        
+        <property name="organization" type="string">
+            <column name="ORGANIZATION" length="50"  />
+        </property>
+        
+        <property name="location_name" type="string">
+            <column name="LOCATION_NAME" length="50"  />
+        </property>
+        
+        <property name="location_address" type="string">
+            <column name="LOCATION_ADDRESS" length="60"  />
+        </property>
+        
+        <property name="location_lat" type="java.lang.Double">
+            <column name="LOCATION_LAT"  />           
+        </property>
+        
+        <property name="location_long" type="java.lang.Double">
+            <column name="LOCATION_LONG"  />           
+        </property>
+        
+        <property name="master_start_datetime" type="date">
+            <column name="MASTER_START_DATETIME" />
+        </property>
+        
+        <property name="master_end_datetime" type="date">
+            <column name="MASTER_END_DATETIME" />
+        </property>
+             
+        <set name="slots" cascade="all" sort="natural">
+            <key column="e_id"/>
+            <one-to-many class="org.redhelp.model.SlotModel"/>
+        </set>
+    </class>
+</hibernate-mapping>
