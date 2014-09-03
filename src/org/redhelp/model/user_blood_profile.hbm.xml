@@ -48,11 +48,6 @@
 			<one-to-many class="org.redhelp.model.NotificationModel" />
 		</set>
 
-		<set name="blood_requests_received" cascade="save-update" table="REQUEST_PROFILE">
-			<key column="b_p_id" />
-			<many-to-many column="b_r_id"
-				class="org.redhelp.model.BloodRequestModel" />
-		</set>
 
 		<set name="slots" cascade="save-update" table="SLOT_PROFILE_JOIN_TABLE">
 			<key column="b_p_id" />
@@ -62,6 +57,11 @@
 		<set name="related_users" cascade="all">
             <key column="b_p_id"/>
             <one-to-many class="org.redhelp.model.UsersRelationshipModel"/>
+        </set>
+        
+        <set name="blood_requests_received" cascade="all">
+            <key column="b_p_id"/>
+            <one-to-many class="org.redhelp.model.RequestUserRelationshipModel"/>
         </set>
 
 	</class>

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+ 
+<hibernate-mapping>
+    <class name="org.redhelp.model.RequestUserRelationshipModel" table="request_user_relationship_join_table" >
+        <id name="r_u_id" type="java.lang.Long">
+            <column name="R_U_ID" />
+            <generator class="native" />
+        </id>
+        
+        <property name="b_p_id" type="java.lang.Long">
+            <column name="b_p_id" />
+        </property>
+        
+        <property name="b_r_id" type="java.lang.Long">
+            <column name="b_r_id" />
+        </property>
+        
+        <property name="requestUserRelationshipType" column="RELATIONSHIP_TYPE" >
+            <type name="org.hibernate.type.EnumType" >
+                <param name="enumClass">org.redhelp.types.RequestUserRelationshipType</param>
+                <param name="type">12</param>
+            </type>
+        </property> 
+        
+    </class>
+</hibernate-mapping>

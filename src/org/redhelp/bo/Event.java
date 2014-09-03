@@ -56,9 +56,9 @@ public class Event {
 	GetEventResponse getEventResponse = new GetEventResponse();
 	getEventResponse.setActive(eventModel.isActive());
 	getEventResponse.setAdditional_email(eventModel.getAdditional_email());
-	//String creation_datetime_string = DateTimeHelper.convertJavaDateToString(eventModel.getCreation_datetime(),
-   	//	JodaTimeFormatters.dateTimeFormatter);
-	//getEventResponse.setCreation_datetime(creation_datetime_string);
+	String creation_datetime_string = DateTimeHelper.convertJavaDateToString(eventModel.getCreation_datetime(),
+   		JodaTimeFormatters.dateFormatter);
+	getEventResponse.setCreation_datetime(creation_datetime_string);
 	
 	getEventResponse.setE_id(eventModel.getE_id());
 	getEventResponse.setLocation_address(eventModel.getLocation_address());

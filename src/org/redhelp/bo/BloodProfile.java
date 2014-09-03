@@ -1,15 +1,23 @@
 package org.redhelp.bo;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 import org.redhelp.common.AddEventResponse;
 import org.redhelp.common.GetBloodProfileAccessRequest;
 import org.redhelp.common.GetBloodProfileAccessResponse;
+import org.redhelp.common.GetBloodProfileAccessResponseRequest;
+import org.redhelp.common.GetBloodProfileAccessResponseResponse;
 import org.redhelp.common.GetBloodProfileRequest;
 import org.redhelp.common.GetBloodProfileResponse;
+import org.redhelp.common.GetBloodRequestResponse;
+import org.redhelp.common.GetEventResponse;
 import org.redhelp.common.SaveBloodProfileResponse;
 import org.redhelp.common.exceptions.DependencyException;
 import org.redhelp.common.exceptions.InvalidRequestException;
@@ -23,11 +31,15 @@ import org.redhelp.common.types.JodaTimeFormatters;
 import org.redhelp.common.types.Location;
 import org.redhelp.common.types.NotificationTypes;
 import org.redhelp.dao.BloodProfileDAO;
+import org.redhelp.dao.EventDAO;
 import org.redhelp.dao.UserAccountDAO;
 import org.redhelp.dao.UserRelationshipDAO;
 import org.redhelp.helpers.DateTimeHelper;
+import org.redhelp.model.BloodGroupsModel;
 import org.redhelp.model.BloodRequestModel;
+import org.redhelp.model.EventModel;
 import org.redhelp.model.NotificationModel;
+import org.redhelp.model.SlotModel;
 import org.redhelp.model.UserAccountModel;
 import org.redhelp.model.UserBloodProfileModel;
 import org.redhelp.model.UsersRelationshipModel;
@@ -53,6 +65,9 @@ public class BloodProfile {
 
     @Autowired
     UserRelationshipDAO userRealtionshipDAO;
+    
+    @Autowired
+    private EventDAO eventDAO;
 
     @Transactional
     public SaveBloodProfileResponse saveBloodProfile(Long u_id, Long b_p_id, Gender gender,
@@ -166,9 +181,9 @@ public class BloodProfile {
 	    model_passed.setGender(gender);
 	if(blood_group_type != null)
 	    model_passed.setBlood_group_type(blood_group_type);
-	if(last_known_location_lat!= null || last_known_location_lat != 0.0) 
+	if(last_known_location_lat!= null) 
 	    model_passed.setLast_known_location_lat(last_known_location_lat);
-	if(last_known_location_long!= null || last_known_location_long != 0.0)
+	if(last_known_location_long!= null)
 	    model_passed.setLast_known_location_long(last_known_location_long);
 	model_passed.setLast_known_location_datetime(new Date());
 	if(city != null)
@@ -240,13 +255,57 @@ public class BloodProfile {
 		}
 	    }
 	}
-	UsersRelationshipModel usersRelationship  = new UsersRelationshipModel();
-	usersRelationship.setB_p_id(accessRequest.getRequester_b_p_id());
-	usersRelationship.setRelated_b_p_id(accessRequest.getReceiver_b_p_id());
-	usersRelationship.setUserRelationshipType(UserRelationshipType.VIEW_PROFILE_PENDING);
 
-	userRealtionshipDAO.create(usersRelationship);
+	// Set requester-receiver relationship
+	UsersRelationshipModel requesterReceiverRelationship  = new UsersRelationshipModel();
+	requesterReceiverRelationship.setB_p_id(accessRequest.getRequester_b_p_id());
+	requesterReceiverRelationship.setRelated_b_p_id(accessRequest.getReceiver_b_p_id());
+	requesterReceiverRelationship.setUserRelationshipType(UserRelationshipType.VIEW_PROFILE_PENDING);
+
+	userRealtionshipDAO.create(requesterReceiverRelationship);
+
+	// Set receiver-requester relationship
+	UsersRelationshipModel receiverRequesterRelationship  = new UsersRelationshipModel();
+	receiverRequesterRelationship.setB_p_id(accessRequest.getReceiver_b_p_id());
+	receiverRequesterRelationship.setRelated_b_p_id(accessRequest.getRequester_b_p_id());
+	receiverRequesterRelationship.setUserRelationshipType(UserRelationshipType.VIEW_PROFILE_REQUESTEE);
+
+	userRealtionshipDAO.create(receiverRequesterRelationship);
+
+
+	// Send notification
+	NotificationModel bloodProfileAccessNotification = NotificationsHelper.getBloodProfileAccessNotification(accessRequest.getRequester_b_p_id(),
+		accessRequest.getReceiver_b_p_id());
+	notificationBo.addNotification(bloodProfileAccessNotification);
+
 	response.setAccessResponseType(GetBloodProfileAccessResponseType.REQUEST_POSTED_SUCCESSFULLY);
+	return response;
+    }
+
+    @Transactional
+    public GetBloodProfileAccessResponseResponse accessRequest(GetBloodProfileAccessResponseRequest respondRequest) {
+	GetBloodProfileAccessResponseResponse response = new GetBloodProfileAccessResponseResponse();
+	// Set requestee-reqester relationship
+	UsersRelationshipModel requesteeRequesterRelationship  = userRealtionshipDAO.findFirstByBpid(respondRequest.getRequestee_b_p_id());
+	requesteeRequesterRelationship.setRelated_b_p_id(respondRequest.getRequester_b_p_id());
+	requesteeRequesterRelationship.setUserRelationshipType(UserRelationshipType.VIEW_PROFILE_ACCEPTED);
+
+	userRealtionshipDAO.update(requesteeRequesterRelationship);
+
+	// Set reqester-requestee relationship
+	UsersRelationshipModel requesterRequesteeRelationship  = userRealtionshipDAO.findFirstByBpid(respondRequest.getRequester_b_p_id());
+	requesterRequesteeRelationship.setRelated_b_p_id(respondRequest.getRequestee_b_p_id());
+	requesterRequesteeRelationship.setUserRelationshipType(UserRelationshipType.VIEW_PROFILE_ACCEPTED);
+
+	userRealtionshipDAO.update(requesterRequesteeRelationship);
+
+
+	// Send notification to Requester
+	NotificationModel bloodProfileAccessNotification = NotificationsHelper.getBloodProfileAcceptedNotification(respondRequest.getRequester_b_p_id(),
+		respondRequest.getRequestee_b_p_id());
+	notificationBo.addNotification(bloodProfileAccessNotification);
+
+	response.setDone(true);
 	return response;
     }
 
@@ -258,19 +317,28 @@ public class BloodProfile {
 	Long b_p_id = profileRequest.getB_p_id(); 
 
 	UserBloodProfileModel bloodProfileModel = getBloodProfileModel(b_p_id);
-
-	UserRelationshipType relationshipType = getUsersRelationshipType(requester_b_p_id, b_p_id);
 	if(requester_b_p_id == b_p_id) {
 	    response = createGetBloodProfileResponse(bloodProfileModel, GetBloodProfileType.OWN);
+	    return response;
 	}
-	else if(relationshipType != null) {
+
+	UserRelationshipType relationshipType = getUsersRelationshipType(requester_b_p_id, b_p_id);
+
+	// Mapping of user relationship type to client shown types.
+	if(relationshipType != null) {
 	    if(relationshipType.equals(UserRelationshipType.VIEW_PROFILE_ACCEPTED) || 
-		    relationshipType.equals(UserRelationshipType.BLOOD_REQUEST_ACCEPTED))
+		    relationshipType.equals(UserRelationshipType.BLOOD_REQUEST_ACCEPTED)) {
 		response = createGetBloodProfileResponse(bloodProfileModel, GetBloodProfileType.PRIVATE);
+	    } else if(relationshipType.equals(UserRelationshipType.VIEW_PROFILE_PENDING)) {
+		response = createGetBloodProfileResponse(bloodProfileModel, GetBloodProfileType.PUBLIC_VIEW_PROFILE_PENDING);
+	    } else if(relationshipType.equals(UserRelationshipType.BLOOD_REQUEST_PENDING)) {
+		response = createGetBloodProfileResponse(bloodProfileModel, GetBloodProfileType.PUBLIC_BLOOD_REQUEST_PENDING);
+	    } else if(relationshipType.equals(UserRelationshipType.VIEW_PROFILE_REQUESTEE)) {
+		response = createGetBloodProfileResponse(bloodProfileModel, GetBloodProfileType.PUBLIC_VIEW_PROFILE_REQUESTEE);
+	    }
 	} else {
 	    response = createGetBloodProfileResponse(bloodProfileModel, GetBloodProfileType.PUBLIC);
 	}
-
 
 	return response;
     }
@@ -293,24 +361,79 @@ public class BloodProfile {
 	response.setB_p_id(model_received.getB_p_id());
 	response.setCity(model_received.getCity());
 	response.setGender(model_received.getGender());
-	if(!profileType.equals(GetBloodProfileType.PUBLIC)) {
-	    response.setLast_known_location_lat(model_received.getLast_known_location_lat());
-	    response.setLast_known_location_long(model_received.getLast_known_location_long());
-	}
+	response.setUser_image(model_received.getUser_account().getUser_image());
+	response.setBlood_group_type(model_received.getBlood_group_type());
+	
+	response.setBlood_requests(convertRequestModels(model_received.getBlood_requests()));
+	
+	response.setEvent_response(convertEventsModels(model_received.getSlots()));
 
 	if(model_received.getUser_account() != null) {
 	    response.setName(model_received.getUser_account().getName());
-	    if(!profileType.equals(GetBloodProfileType.PUBLIC)) {
+	    if(GetBloodProfileType.OWN.equals(profileType) || GetBloodProfileType.PRIVATE.equals(profileType)) {
+		response.setLast_known_location_lat(model_received.getLast_known_location_lat());
+		response.setLast_known_location_long(model_received.getLast_known_location_long());
+
 		response.setEmail(model_received.getUser_account().getEmail());
 		response.setPhone_number(model_received.getUser_account().getPhoneNo());
 	    }
 	}
-
 	response.setResponse_type(profileType);
 	return response;
     }
 
+    private LinkedList<GetEventResponse> convertEventsModels(Set<SlotModel> slots) {
+	LinkedList<GetEventResponse> getEventResponseList = null;
+	if (slots != null) {
+	    getEventResponseList = new LinkedList<GetEventResponse>();
+	    for (SlotModel slot : slots) {
+		
+		Long e_id = slot.getE_id();
+		EventModel eventModel = eventDAO.findById(e_id);
+		if (eventModel != null) {
+		    GetEventResponse eventResponse = new GetEventResponse();
+		    eventResponse.setE_id(eventModel.getE_id());
+		    eventResponse.setName(eventModel.getName());
+		    eventResponse.setOrganization(eventModel.getOrganization());
+		    
+		    String string_date = DateTimeHelper.convertJavaDateToString(eventModel.getCreation_datetime(),
+				JodaTimeFormatters.dateFormatter);
+		    eventResponse.setCreation_datetime(string_date);
+		    
+		    eventResponse.setLocation_address(eventModel.getLocation_address());
+		    eventResponse.setLocation_lat(eventModel.getLocation_lat());
+		    eventResponse.setLocation_long(eventModel.getLocation_long());
+		    getEventResponseList.add(eventResponse);
+		}
+		
+	    }
+	}
+	return getEventResponseList;
+    }
 
-
-
+    private LinkedList<GetBloodRequestResponse> convertRequestModels(SortedSet<BloodRequestModel> blood_requests) {
+	LinkedList<GetBloodRequestResponse> responseSet = null;
+	if(blood_requests != null) {
+	    responseSet = new LinkedList<GetBloodRequestResponse>();
+	    for(BloodRequestModel bloodRequestModel : blood_requests) {
+		GetBloodRequestResponse response = new GetBloodRequestResponse();
+		response.setB_r_id(bloodRequestModel.getB_r_id());
+		String blood_grps_str = null;
+		for(BloodGroupsModel bloodGroupsModel: bloodRequestModel.getSet_blood_group()) {
+		    BloodGroupType groupType = bloodGroupsModel.getBloodGroupTypeEnum();
+		    if(blood_grps_str == null)
+			blood_grps_str = groupType.toString();
+		    else
+			blood_grps_str = blood_grps_str + ", " + groupType.toString();
+		}
+		response.setBlood_groups_str(blood_grps_str);
+		response.setDescription(bloodRequestModel.getPatient_name());
+		response.setPlace_location_lat(bloodRequestModel.getPlace_location_lat());
+		response.setPlace_location_long(bloodRequestModel.getPlace_location_long());
+		response.setPlace_string(bloodRequestModel.getPlace_string());
+		responseSet.add(response);
+	    }
+	}	
+	return responseSet;
+    }
 }

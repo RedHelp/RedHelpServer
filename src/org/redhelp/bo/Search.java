@@ -44,6 +44,18 @@ public class Search {
 	} else if(SearchRequestType.ALL.equals(searchRequest.getSearchRequestType())) {
 	    searchResponse = serachAll(searchRequest);
 	}
+	
+	
+	if(searchRequest.isRequire_user_location() && searchRequest.getB_p_id() != null) {
+	    UserBloodProfileModel bloodProfile  = bloodProfileBo.getBloodProfileModel(searchRequest.getB_p_id());
+	   
+	    Location blLocation = new Location();
+	    blLocation.latitude = bloodProfile.getLast_known_location_lat();
+	    blLocation.longitude = bloodProfile.getLast_known_location_long();
+	    
+	    searchResponse.setUser_location_saved(blLocation);
+	}
+	
 	return searchResponse;
 	
     }

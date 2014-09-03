@@ -31,6 +31,7 @@ http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 				<value>org/redhelp/model/event.hbm.xml</value>	
 				<value>org/redhelp/model/notification.hbm.xml</value>	
 				<value>org/redhelp/model/users_relationship.hbm.xml</value>	
+				<value>org/redhelp/model/request_user_relationship.hbm.xml</value> 
 			</list>
 		</property>
 	</bean>

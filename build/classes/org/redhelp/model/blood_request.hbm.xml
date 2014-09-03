@@ -51,10 +51,9 @@
             <key column="b_r_id"/>
             <one-to-many class="org.redhelp.model.BloodGroupsModel"/>
         </set>
-        
-        <set name="blood_request_receivers_profiles" cascade="save-update" table="REQUEST_PROFILE">
+        <set name="blood_request_receivers_profiles" cascade="all">
             <key column="b_r_id"/>
-            <many-to-many column="b_p_id" class="org.redhelp.model.UserBloodProfileModel"/>
+            <one-to-many class="org.redhelp.model.RequestUserRelationshipModel"/>
         </set>
         
         <property name="blood_requirement_type" column="BLOOD_REQUIREMENT_TYPE" >

@@ -10,6 +10,8 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.log4j.Logger;
 import org.redhelp.bo.BloodRequest;
+import org.redhelp.common.AcceptBloodRequestRequest;
+import org.redhelp.common.AcceptBloodRequestResponse;
 import org.redhelp.common.GetBloodRequestResponse;
 import org.redhelp.common.SaveBloodRequestRequest;
 import org.redhelp.common.SaveBloodRequestResponse;
@@ -75,22 +77,64 @@ public class BloodRequestResource {
 	String saveResponseString = gson.toJson(saveRequestResponse);
 	logger.debug(saveResponseString);
 	return saveResponseString;
+    }
+    
+    @POST
+    @Path("/acceptBloodRequest")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+    public String acceptBloodRequest(AcceptBloodRequestRequest acceptRequest) {
+	
+	String log_msg_request = String.format("acceptBloodRequest operation called, AcceptBloodRequestRequest:%s", acceptRequest.toString());
+	logger.debug(log_msg_request);
+
+	try {
+	    validateAcceptBloodRequest(acceptRequest);
+	} catch (InvalidRequestException invalid_request_exception) {
+	    String invalid_request_msg = "Invalid request, Exception:";
+	    logger.error(invalid_request_msg, invalid_request_exception);
+	    throw invalid_request_exception;
+	}
+
+	AcceptBloodRequestResponse acceptResponse = null;
+	Gson gson = new Gson();
+
+	try {
+	    acceptResponse = bloodRequestBo.acceptBloodRequest(acceptRequest);
+	} catch (Exception e) {
+	    logger.error("Dependency exception:", e);
+	    throw new DependencyException(e.toString());
+	}
+	
+	String responseString = gson.toJson(acceptResponse);
+	logger.debug(responseString);
+	return responseString;
     
     }
     
+    
+    
+    private void validateAcceptBloodRequest(AcceptBloodRequestRequest acceptRequest) {
+	if (acceptRequest.getB_p_id() == null || acceptRequest.getB_r_id() == null)
+   	    throw new InvalidRequestException("B_p_id or b_r_id can't be null");
+    }
+
+
     @GET
-    @Path("{b_r_id}")
+    @Path("{b_r_id}/{b_p_id}")
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    public String getBloodRequest(@PathParam("b_r_id") String b_r_id) {
-	String log_msg_request = String.format("getBloodRequest called, b_r_id:%s",
-		b_r_id);
+    public String getBloodRequest(@PathParam("b_r_id") String b_r_id, @PathParam("b_p_id") String b_p_id ) {
+	String log_msg_request = String.format("getBloodRequest called, b_r_id:%s, b_p_id:%s",
+		b_r_id, b_p_id);
+	
 	logger.debug(log_msg_request);
 	
 	GetBloodRequestResponse get_blood_request_response = null;
 	Long b_r_id_long = Long.valueOf(b_r_id);
+	Long b_p_id_long = Long.valueOf(b_p_id);
 	
 	try {
-	    get_blood_request_response =  bloodRequestBo.getBloodRequest(b_r_id_long);
+	    get_blood_request_response =  bloodRequestBo.getBloodRequest(b_r_id_long, b_p_id_long);
 	} catch(Exception e) {
 	    logger.info("Invalid state!", e);
 	    throw new DependencyException(e.toString());

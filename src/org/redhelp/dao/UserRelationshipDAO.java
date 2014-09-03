@@ -24,4 +24,15 @@ public class UserRelationshipDAO extends AbstractDAO<UsersRelationshipModel, Lon
 	return relationship_list;
     }
     
+    public UsersRelationshipModel findFirstByBpid(Long b_p_id)
+    {
+	Assert.assertNotNull(b_p_id, "b_p_id passed is null, can't proceed");
+	
+	List<UsersRelationshipModel> relationship_list = findBy("b_p_id", b_p_id);
+	if(relationship_list.size() == 0)
+	    return null;
+	
+	return relationship_list.get(0);
+    }
+    
 }

@@ -27,9 +27,6 @@ public class UserBloodProfileModel implements Comparable<UserBloodProfileModel>{
     
     private Set<UserBloodProfileModel> related_users;
     
-    //TODO remove this.
-    private boolean dirty_bit;
-   
     
     public Long getB_p_id() {
         return b_p_id;
@@ -126,12 +123,6 @@ public class UserBloodProfileModel implements Comparable<UserBloodProfileModel>{
     }
     public void setNotifications(SortedSet<NotificationModel> notifications) {
 	this.notifications = notifications;
-    }
-    public boolean isDirty_bit() {
-	return dirty_bit;
-    }
-    public void setDirty_bit(boolean dirty_bit) {
-	this.dirty_bit = dirty_bit;
     }
     public Set<UserBloodProfileModel> getRelated_users() {
 	return related_users;

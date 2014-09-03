@@ -14,6 +14,8 @@ import org.redhelp.common.AddEventRequest;
 import org.redhelp.common.AddEventResponse;
 import org.redhelp.common.GetBloodProfileAccessRequest;
 import org.redhelp.common.GetBloodProfileAccessResponse;
+import org.redhelp.common.GetBloodProfileAccessResponseRequest;
+import org.redhelp.common.GetBloodProfileAccessResponseResponse;
 import org.redhelp.common.GetBloodProfileRequest;
 import org.redhelp.common.GetBloodProfileResponse;
 import org.redhelp.common.SaveBloodProfileRequest;
@@ -103,8 +105,7 @@ public class BloodProfileResource {
 	Gson gson = new Gson();
 
 	try {
-	    profileResponse = bloodProfileBo.getBloodProfile(profileRequest);
-	   
+	    profileResponse = bloodProfileBo.getBloodProfile(profileRequest);	   
 	} catch (Exception e) {
 	    logger.error("Dependency exception:", e);
 	    throw new DependencyException(e.toString());
@@ -126,7 +127,7 @@ public class BloodProfileResource {
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     public String requestAccess(GetBloodProfileAccessRequest accessRequest) {
 
-	String log_msg_request = String.format("login operation called, GetBloodProfileAccessRequest:%s", accessRequest.toString());
+	String log_msg_request = String.format("requestAccess operation called, GetBloodProfileAccessRequest:%s", accessRequest.toString());
 	logger.debug(log_msg_request);
 
 	try {
@@ -153,6 +154,43 @@ public class BloodProfileResource {
 	return saveResponseString;
     }
     
+    @POST
+    @Path("/respondAccess")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+    public String respondAccess(GetBloodProfileAccessResponseRequest respondRequest) {
+
+	String log_msg_request = String.format("respondAccess operation called, GetBloodProfileAccessResponseRequest:%s", respondRequest.toString());
+	logger.debug(log_msg_request);
+
+	try {
+	    validateRespondRequest(respondRequest);
+	} catch (InvalidRequestException invalid_request_exception) {
+	    String invalid_request_msg = "Invalid request, Exception:";
+	    logger.error(invalid_request_msg, invalid_request_exception);
+	    throw invalid_request_exception;
+	}
+
+	GetBloodProfileAccessResponseResponse respondResponse = new GetBloodProfileAccessResponseResponse();
+	Gson gson = new Gson();
+
+	try {
+	    respondResponse = bloodProfileBo.accessRequest(respondRequest);
+	} catch (Exception e) {
+	    logger.error("Dependency exception:", e);
+	    throw new DependencyException(e.toString());
+	}
+	
+	String saveResponseString = gson.toJson(respondResponse);
+	logger.debug(saveResponseString);
+	return saveResponseString;
+    }
+    
+    private void validateRespondRequest(GetBloodProfileAccessResponseRequest respondRequest) {
+	if (respondRequest.getRequestee_b_p_id() == null || respondRequest.getRequester_b_p_id() == null)
+   	    throw new InvalidRequestException("getRequestee_b_p_id or getRequester_b_p_id can't be null");
+    }
+
     private void validateAccessBloodProfileRequest(GetBloodProfileAccessRequest accessRequest) {
 	if (accessRequest.getReceiver_b_p_id() == null || accessRequest.getRequester_b_p_id() == null)
    	    throw new InvalidRequestException("getReceiver_b_p_id or getRequester_b_p_id can't be null");
