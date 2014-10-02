@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
  
 <hibernate-mapping>
-    <class name="org.redhelp.model.SlotModel" table="SLOTS" >
+    <class name="org.redhelp.model.SlotModel" table="slots" >
         <id name="s_id" type="java.lang.Long">
             <column name="S_ID" />
             <generator class="native" />
@@ -13,10 +13,10 @@
             <column name="e_id" />
         </property>
         
-        <property name="start_datetime" type="date">
+        <property name="start_datetime" type="timestamp">
             <column name="START_DATETIME" />
         </property>
-        <property name="end_datetime" type="date">
+        <property name="end_datetime" type="timestamp">
             <column name="END_DATETIME" />
         </property>
         
@@ -36,7 +36,7 @@
             <column name="CURRENT_VOLUNTEERS"/>
         </property>
         
-        <set name="users_coming" cascade="save-update" table="SLOT_PROFILE_JOIN_TABLE">
+        <set name="users_coming" cascade="save-update" table="slot_profile_join_table">
             <key column="s_id"/>
             <many-to-many column="b_p_id" class="org.redhelp.model.UserBloodProfileModel"/>
         </set>

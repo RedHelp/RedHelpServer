@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-	<class name="org.redhelp.model.UserBloodProfileModel" table="USER_BLOOD_PROFILE">
+	<class name="org.redhelp.model.UserBloodProfileModel" table="user_blood_profile">
 		<id name="b_p_id" type="java.lang.Long">
 			<column name="B_P_ID" />
 			<generator class="native" />
@@ -49,7 +49,7 @@
 		</set>
 
 
-		<set name="slots" cascade="save-update" table="SLOT_PROFILE_JOIN_TABLE">
+		<set name="slots" cascade="save-update" table="slot_profile_join_table">
 			<key column="b_p_id" />
 			<many-to-many column="s_id" class="org.redhelp.model.SlotModel" />
 		</set>

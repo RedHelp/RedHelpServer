@@ -1,7 +1,9 @@
 package org.redhelp.bo;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -11,6 +13,8 @@ import org.redhelp.common.AcceptBloodRequestRequest;
 import org.redhelp.common.AcceptBloodRequestResponse;
 import org.redhelp.common.GetBloodRequestResponse;
 import org.redhelp.common.SaveBloodRequestRequest;
+import org.redhelp.common.UpdateBloodRequest;
+import org.redhelp.common.UpdateBloodRequestResponse;
 import org.redhelp.common.UserProfileCommonFields;
 import org.redhelp.common.exceptions.InvalidRequestException;
 import org.redhelp.common.types.BloodGroupType;
@@ -18,6 +22,7 @@ import org.redhelp.common.types.BloodRequestType;
 import org.redhelp.common.types.JodaTimeFormatters;
 import org.redhelp.common.types.Location;
 import org.redhelp.common.types.NotificationTypes;
+import org.redhelp.common.types.UpdateBloodRequestState;
 import org.redhelp.dao.BloodRequestDAO;
 import org.redhelp.dao.RequestUserRelationshipDAO;
 import org.redhelp.dao.UserRelationshipDAO;
@@ -28,6 +33,7 @@ import org.redhelp.model.NotificationModel;
 import org.redhelp.model.RequestUserRelationshipModel;
 import org.redhelp.model.UserAccountModel;
 import org.redhelp.model.UserBloodProfileModel;
+import org.redhelp.types.BloodRequestState;
 import org.redhelp.types.EmailType;
 import org.redhelp.types.RequestUserRelationshipType;
 import org.redhelp.types.UserRelationshipType;
@@ -65,6 +71,112 @@ public class BloodRequest {
     {
 	return bloodRequestDAO.create(blood_request_model_passed);
     }
+    
+    @Transactional
+    public String dailyUpdateJob() {
+	Date currentDate = new Date();
+	Calendar cal = Calendar.getInstance();
+	cal.setTime(currentDate);
+	cal.add(Calendar.DATE, -7);
+	Date lastWeekDate = cal.getTime();
+	
+	List<BloodRequestModel> bloodRequestsInRange = bloodRequestDAO.getAllForDate(lastWeekDate);
+	
+	for(BloodRequestModel bloodRequestModel : bloodRequestsInRange ) {
+	    Long creator_b_p_id = bloodRequestModel.getB_p_id();
+	    Long b_r_id = bloodRequestModel.getB_r_id();
+	    BloodRequestState newState = newBloodRequestBasedOnTimeout(bloodRequestModel);
+	    
+	    // Update State
+	    bloodRequestModel.setBloodRequestState(newState);
+	    bloodRequestModel.setLast_state_change_datetime(currentDate);
+	    bloodRequestDAO.update(bloodRequestModel);
+	    
+	    // Send notifications
+	    NotificationModel notificationToSend = null;
+	    if(BloodRequestState.INACTIVE_EXPIRED.equals(newState)) {
+		notificationToSend = NotificationsHelper.getBloodRequestExpiredNotification(creator_b_p_id, b_r_id);
+	    } else if(BloodRequestState.INACTIVE_EXTENDED_EXPIRED.equals(newState)) {
+		notificationToSend = NotificationsHelper.getBloodRequestExtendedExpiredNotification(creator_b_p_id, b_r_id);
+	    }
+	    
+	    if(notificationToSend != null)
+		notificationBo.addNotification(notificationToSend);
+	}
+		
+	String receivers_string = bloodRequestsInRange.toString();
+	
+   	return receivers_string;
+    }
+    
+    
+    
+    public BloodRequestState newBloodRequestBasedOnTimeout(BloodRequestModel bloodRequestModel) {
+	BloodRequestState currentBloodRequestState = bloodRequestModel.getBloodRequestState();
+	BloodRequestState updatedBloodRequestState = null;
+	if(BloodRequestState.ACTIVE.equals(currentBloodRequestState)) {
+	    updatedBloodRequestState = BloodRequestState.INACTIVE_EXPIRED;
+	} else if(BloodRequestState.EXTENDED.equals(currentBloodRequestState)) {
+	    updatedBloodRequestState = BloodRequestState.INACTIVE_EXTENDED_EXPIRED;
+	} 
+	
+	if(updatedBloodRequestState != null)
+	    return updatedBloodRequestState;
+	else 
+	    return currentBloodRequestState;
+    }
+    
+    
+
+    @Transactional
+    public UpdateBloodRequestResponse updateBloodRequest(UpdateBloodRequest request) {
+	UpdateBloodRequestResponse response = new UpdateBloodRequestResponse();
+	Long b_r_id = request.getB_r_id();
+	BloodRequestModel requestModel = bloodRequestDAO.findById(b_r_id);
+	if(requestModel == null) {
+	    response.setSuccessful(false);
+	    return response;
+	}
+
+	UpdateBloodRequestState updateState = request.getUpdateState();
+	updateBloodRequestState(requestModel, updateState);
+
+	List<Long> verified_b_p_ids = request.getVerified_b_p_ids();
+
+	if(verified_b_p_ids != null) {
+	    for(Long verified_b_p_id : verified_b_p_ids) {
+		RequestUserRelationshipModel relationshipModel = requestUserRelationshipDAO.find(b_r_id, verified_b_p_id);
+		if(relationshipModel == null) {
+		    continue;
+		}
+		// Update relationship
+		relationshipModel.setRequestUserRelationshipType(RequestUserRelationshipType.BLOOD_REQUEST_VERIFIED);
+		requestUserRelationshipDAO.update(relationshipModel);	
+	    }
+	}
+	response.setSuccessful(true);
+	return response;
+    }
+
+
+    @Transactional
+    public void updateBloodRequestState(BloodRequestModel requestModel,
+	    UpdateBloodRequestState updateState) {
+	if (updateState != null) {
+	    if (UpdateBloodRequestState.EXTENDED.equals(updateState)) {
+		requestModel.setBloodRequestState(BloodRequestState.EXTENDED);
+	    } else if (UpdateBloodRequestState.INACTIVE_MANUALLY.equals(updateState)) {
+		requestModel.setBloodRequestState(BloodRequestState.INACTIVE_MANUALLY);
+	    } else if(UpdateBloodRequestState.INACTIVE_EXPIRED.equals(updateState)) {
+		requestModel.setBloodRequestState(BloodRequestState.INACTIVE_EXPIRED);
+	    } else if(UpdateBloodRequestState.INACTIVE_EXTENDED_EXPIRED.equals(updateState)) {
+		requestModel.setBloodRequestState(BloodRequestState.INACTIVE_EXTENDED_EXPIRED);
+	    } else if(UpdateBloodRequestState.ACTIVE.equals(updateState)) {
+		requestModel.setBloodRequestState(BloodRequestState.ACTIVE);
+	    }
+	    bloodRequestDAO.update(requestModel);
+	}
+    }
 
     @Transactional
     public AcceptBloodRequestResponse acceptBloodRequest(AcceptBloodRequestRequest acceptRequest) {
@@ -74,7 +186,6 @@ public class BloodRequest {
 
 	BloodRequestModel requestModel = bloodRequestDAO.findById(b_r_id);
 	Long creator_b_p_id = requestModel.getB_p_id();
-
 
 	RequestUserRelationshipModel relationshipModel = requestUserRelationshipDAO.find(b_r_id, acceptor_b_p_id);
 	if(relationshipModel == null) {
@@ -90,8 +201,11 @@ public class BloodRequest {
 	userRealtionshipBo.updateRelationship(creator_b_p_id, acceptor_b_p_id, UserRelationshipType.BLOOD_REQUEST_ACCEPTED);
 
 	// Send notification and email to Creator
+	UserBloodProfileModel acceptorProfile = bloodProfileBo.getBloodProfileModel(acceptor_b_p_id);
+	String acceptorName = acceptorProfile.getUser_account().getName();
 
-	NotificationModel bloodRequestAcceptedNotification = NotificationsHelper.getBloodRequestAccptedNotification(creator_b_p_id, b_r_id, acceptor_b_p_id);
+	NotificationModel bloodRequestAcceptedNotification = NotificationsHelper.getBloodRequestAccptedNotification(creator_b_p_id,
+		b_r_id, acceptor_b_p_id, acceptorName);
 	notificationBo.addNotification(bloodRequestAcceptedNotification);
 
 	// TODO Send email.
@@ -122,7 +236,7 @@ public class BloodRequest {
 	Long creator_b_p_id = request.getB_p_id();
 
 	// Add potential donors in relationship table
-	Set<UserBloodProfileModel> bloodRequestReceivers = BloodRequestHelper.getPotentialDonors(bloodProfileBo);
+	Set<UserBloodProfileModel> bloodRequestReceivers = BloodRequestHelper.getPotentialDonors(bloodProfileBo, creator_b_p_id, request.getList_blood_group());
 	for(UserBloodProfileModel bloodProfile : bloodRequestReceivers) {
 	    Long b_p_id = bloodProfile.getB_p_id();
 	    RequestUserRelationshipModel realtionshipModel = new RequestUserRelationshipModel();
@@ -131,14 +245,13 @@ public class BloodRequest {
 	    realtionshipModel.setRequestUserRelationshipType(RequestUserRelationshipType.BLOOD_REQUEST_PENDING_ACCEPTANCE);
 	    requestUserRelationshipDAO.create(realtionshipModel);
 	}
+	UserBloodProfileModel creatorBloodProfile = bloodProfileBo.getBloodProfileModel(creator_b_p_id);
+	String creator_email = creatorBloodProfile.getUser_account().getEmail();
+	String creatorName = creatorBloodProfile.getUser_account().getName();
 
 
 	// Send email to creator
 	try {
-
-	    UserBloodProfileModel creatorBloodProfile = bloodProfileBo.getBloodProfileModel(creator_b_p_id);
-	    String creator_email = creatorBloodProfile.getUser_account().getEmail();
-
 	    if(creator_email != null) {
 		EmailSender emailTask = new EmailSender(creator_email, null, EmailType.BLOOD_REQUEST_POSTED);
 		Thread worker = new Thread(emailTask);
@@ -153,8 +266,10 @@ public class BloodRequest {
 	for(UserBloodProfileModel receiver : bloodRequestReceivers) {
 	    // Send notification
 	    Long receivers_b_p_id = receiver.getB_p_id();
+
 	    NotificationModel bloodRequestReceivedNotification = NotificationsHelper.
-		    getBloodRequestReceivedNotification(creator_b_p_id, receivers_b_p_id, b_r_id);
+		    getBloodRequestReceivedNotification(creator_b_p_id,
+			    receivers_b_p_id, b_r_id, creatorName);
 	    notificationBo.addNotification(bloodRequestReceivedNotification);
 
 	    // Send email.
@@ -179,7 +294,6 @@ public class BloodRequest {
 	    logger.info("bloodRequestModel is null can't find model for b_r_id" + b_r_id);
 	    throw new InvalidRequestException("can't find model for b_r_id"+b_r_id);
 	}
-	logger.info("bloodRequestModel :"+bloodRequestModel.toString());
 
 	BloodRequestType requestType = null;
 	RequestUserRelationshipType relationshipType = reUserRelationshipBo.getRelationShipType(b_r_id, b_p_id);
@@ -203,11 +317,11 @@ public class BloodRequest {
 	response.setB_r_id(bloodRequestModel.getB_r_id());
 	response.setB_p_id(bloodRequestModel.getB_p_id());
 	response.setActive(bloodRequestModel.isActive());
-	
+
 	String string_date = DateTimeHelper.convertJavaDateToString(bloodRequestModel.getCreation_datetime(),
 		JodaTimeFormatters.dateTimeFormatter);
 	response.setCreation_datetime(string_date);
-	
+
 	response.setDescription(bloodRequestModel.getDescription());
 	response.setPatient_name(bloodRequestModel.getPatient_name());
 	response.setPhone_number(bloodRequestModel.getPhone_number());
@@ -222,10 +336,10 @@ public class BloodRequest {
 		blood_grps_str = blood_grps_str + ", " + groupType.toString();
 	}
 	response.setBlood_groups_str(blood_grps_str);
-	
+
 	List<RequestUserRelationshipModel> requestUserRelationships = requestUserRelationshipDAO.findByBrid(bloodRequestModel.getB_r_id());
 	response.setBlood_request_receivers_profiles(getCommonFields(requestUserRelationships));
-	
+
 	UserProfileCommonFields creator_user_profile = null;
 	try {
 	    UserBloodProfileModel creator_blood_profile = bloodProfileBo.getBloodProfileModel(response.getB_p_id());
@@ -235,8 +349,8 @@ public class BloodRequest {
 
 	} catch(Exception e){}
 	response.setCreator_profile(creator_user_profile);
-	
-	
+
+
 
 	response.setBlood_requirement_type(bloodRequestModel.getBlood_requirement_type());
 
@@ -245,11 +359,13 @@ public class BloodRequest {
 	response.setPlace_location_lat(bloodRequestModel.getPlace_location_lat());
 	response.setPlace_location_long(bloodRequestModel.getPlace_location_long());
 	response.setPlace_string(bloodRequestModel.getPlace_string());
-	
+
 	if(requestType != null)
 	    response.setBloodRequestType(requestType);
 	else 
 	    response.setBloodRequestType(BloodRequestType.PUBLIC);
+
+	response.setBloodRequestState(convert(bloodRequestModel.getBloodRequestState()));
 
 	return response;
     }
@@ -327,6 +443,8 @@ public class BloodRequest {
 	}
 	bloodRequestModel.setSet_blood_group(bloodGroups);
 	bloodRequestModel.setCreation_datetime(new Date());
+	bloodRequestModel.setBloodRequestState(BloodRequestState.ACTIVE);
+	bloodRequestModel.setLast_state_change_datetime(new Date());
 	return bloodRequestModel;
     }
 
@@ -337,14 +455,49 @@ public class BloodRequest {
     public List<BloodRequestModel> searchViaRange(Location southWestLocation,
 	    Location northEastLocation) {
 	List<BloodRequestModel> list_blood_request_models = bloodRequestDAO.searchViaRange(southWestLocation, northEastLocation);
-	return list_blood_request_models;
+	return applyInActiveFilter(list_blood_request_models);
     }
 
     @Transactional
     public List<BloodRequestModel> searchAll() {
 	List<BloodRequestModel> list_blood_request_models = bloodRequestDAO.findAll();
-	return list_blood_request_models;
+	return applyInActiveFilter(list_blood_request_models);
     }
+
+    public List<BloodRequestModel> applyInActiveFilter
+    (List<BloodRequestModel> list_blood_request_models) {
+	List<BloodRequestModel> new_list = new LinkedList<BloodRequestModel>();
+	if (list_blood_request_models != null) {
+	    for (BloodRequestModel bloodRequestModel : list_blood_request_models) {
+		if(BloodRequestState.ACTIVE.equals(bloodRequestModel.getBloodRequestState())
+			|| BloodRequestState.EXTENDED.equals(bloodRequestModel.getBloodRequestState())) {
+		    new_list.add(bloodRequestModel);
+		}
+	    }
+	}
+	return new_list;
+
+    }
+
+    private UpdateBloodRequestState convert(BloodRequestState bloodRequestState) {
+	UpdateBloodRequestState updateBloodRequestState = null;
+	if (bloodRequestState.EXTENDED.equals(bloodRequestState)) {
+	    updateBloodRequestState = UpdateBloodRequestState.EXTENDED;
+	} else if (bloodRequestState.INACTIVE_MANUALLY.equals(bloodRequestState)) {
+	    updateBloodRequestState = UpdateBloodRequestState.INACTIVE_MANUALLY;
+	} else if(bloodRequestState.INACTIVE_EXPIRED.equals(bloodRequestState)) {
+	    updateBloodRequestState = UpdateBloodRequestState.INACTIVE_EXPIRED;
+	} else if(bloodRequestState.INACTIVE_EXTENDED_EXPIRED.equals(bloodRequestState)) {
+	    updateBloodRequestState = UpdateBloodRequestState.INACTIVE_EXTENDED_EXPIRED;
+	} else if(bloodRequestState.ACTIVE.equals(bloodRequestState)) {
+	    updateBloodRequestState = UpdateBloodRequestState.ACTIVE;
+	}
+	return updateBloodRequestState;
+    }
+
+   
+
+
 
 
 

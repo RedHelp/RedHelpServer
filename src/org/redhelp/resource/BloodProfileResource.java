@@ -90,9 +90,11 @@ public class BloodProfileResource {
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     public String getBloodProfile(GetBloodProfileRequest profileRequest) {
 
-	String log_msg_request = String.format("getBloodProfile operation called, GetBloodProfileRequest:%s", profileRequest.toString());
-	logger.debug(log_msg_request);
-
+	String log_msg_request = String.format("getBloodProfileOperation called, GetBloodProfileRequest:%s", profileRequest.toString());
+	logger.debug(log_msg_request);	
+	
+	long startProfiler = System.nanoTime();
+	
 	try {
 	    validateGetBloodProfileRequest(profileRequest);
 	} catch (InvalidRequestException invalid_request_exception) {
@@ -111,9 +113,13 @@ public class BloodProfileResource {
 	    throw new DependencyException(e.toString());
 	}
 	
-	String saveResponseString = gson.toJson(profileResponse);
-	logger.debug(saveResponseString);
-	return saveResponseString;
+	
+	String getResponseString = gson.toJson(profileResponse);
+	long elapsedTime = System.nanoTime() - startProfiler;
+	double elapsedTimeSec = (double)elapsedTime/1000000000.0;
+	logger.info(getResponseString);
+	logger.info("Time taken by getBloodProfileOperation:" + elapsedTimeSec);
+	return getResponseString;
     }
     
     private void validateGetBloodProfileRequest(GetBloodProfileRequest profileRequest) {

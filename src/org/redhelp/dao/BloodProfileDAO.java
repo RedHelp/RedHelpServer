@@ -28,8 +28,6 @@ public class BloodProfileDAO extends AbstractDAO<UserBloodProfileModel, Long>{
 	criteria.add(Restrictions.gt("last_known_location_long", southWestLocation.longitude));
 	criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
 	
-	if(criteria.list()!= null)
-	    logger.debug(criteria.list().toString());
 	return criteria.list();	
     }
     

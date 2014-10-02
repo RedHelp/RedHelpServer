@@ -48,7 +48,6 @@ public class Event {
 	    throw new InvalidRequestException("can't find model for e_id"+e_id);
 	}
 	
-	logger.info("eventModel :"+eventModel.toString());
 	return getEventResponseFromEventModel(eventModel);
     }
 

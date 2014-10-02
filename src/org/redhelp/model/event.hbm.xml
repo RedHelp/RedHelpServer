@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
  
 <hibernate-mapping>
-    <class name="org.redhelp.model.EventModel" table="EVENTS" >
+    <class name="org.redhelp.model.EventModel" table="events" >
         <id name="e_id" type="java.lang.Long">
             <column name="E_ID" />
             <generator class="native" />
@@ -13,7 +13,7 @@
             <column name="b_p_id" />
         </property>
         
-        <property name="creation_datetime" type="date">
+        <property name="creation_datetime" type="timestamp">
             <column name="CREATION_DATETIME" />
         </property>
          
@@ -53,11 +53,11 @@
             <column name="LOCATION_LONG"  />           
         </property>
         
-        <property name="master_start_datetime" type="date">
+        <property name="master_start_datetime" type="timestamp">
             <column name="MASTER_START_DATETIME" />
         </property>
         
-        <property name="master_end_datetime" type="date">
+        <property name="master_end_datetime" type="timestamp">
             <column name="MASTER_END_DATETIME" />
         </property>
              

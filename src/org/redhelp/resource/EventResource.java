@@ -92,9 +92,10 @@ public class EventResource {
     @Path("{e_id}")
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     public String getEvent(@PathParam("e_id") String e_id) {
-	String log_msg_request = String.format("getEvent called, e_id:%s",
+	String log_msg_request = String.format("getEventOperation called, e_id:%s",
 		e_id);
 	logger.debug(log_msg_request);
+	long startProfiler = System.nanoTime();
 	
 	GetEventResponse get_event_response = null;
 	Long e_id_long = Long.valueOf(e_id);
@@ -113,6 +114,11 @@ public class EventResource {
 		
 	Gson gson = new Gson();
 	String json_get_response = gson.toJson(get_event_response);
+	
+	long elapsedTime = System.nanoTime() - startProfiler;
+	double elapsedTimeSec = (double)elapsedTime/1000000000.0;
+	logger.info("Time taken by getEventOperation:" + elapsedTimeSec);
+	
 	return json_get_response;
     }
     private void validateAddEventRequest(AddEventRequest addEventRequest) {

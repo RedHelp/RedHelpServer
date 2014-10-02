@@ -184,8 +184,6 @@ public class UserAccount {
 	    logger.info("model_received is null");
 	    throw new InvalidRequestException("can't find model for b_p_id"+u_id);
 	}
-	logger.info(model_received.toString());
-	logger.info("response: "+response.toString());
 	return response;
     }
     

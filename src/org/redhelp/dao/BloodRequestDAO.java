@@ -1,5 +1,7 @@
 package org.redhelp.dao;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -21,16 +23,30 @@ public class BloodRequestDAO extends AbstractDAO<BloodRequestModel, Long>{
     public List<BloodRequestModel> searchViaRange(Location southWestLocation, Location northEastLocation) {
 
 	Criteria criteria = getSession().createCriteria(getPersistentClass());
-	criteria.add(Restrictions.lt("gps_location_lat", northEastLocation.latitude));
-	criteria.add(Restrictions.lt("gps_location_long",northEastLocation.longitude));
+	criteria.add(Restrictions.lt("place_location_lat", northEastLocation.latitude));
+	criteria.add(Restrictions.lt("place_location_long",northEastLocation.longitude));
 	
-	criteria.add(Restrictions.gt("gps_location_lat", southWestLocation.latitude));
-	criteria.add(Restrictions.gt("gps_location_long", southWestLocation.longitude));
+	criteria.add(Restrictions.gt("place_location_lat", southWestLocation.latitude));
+	criteria.add(Restrictions.gt("place_location_long", southWestLocation.longitude));
 	criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
 	
-	if(criteria.list()!= null)
-	    logger.error(criteria.list().toString());
 	return criteria.list();	
     }
+    
+    public List<BloodRequestModel> getAllForDate(Date atDate) {
+	Calendar cal = Calendar.getInstance();
+	cal.setTime(atDate);
+	cal.add(Calendar.DATE, +1);
+	Date nextDate = cal.getTime();
+	
+	
+	
+   	Criteria criteria = getSession().createCriteria(getPersistentClass());
+   	criteria.add(Restrictions.gt("last_state_change_datetime", atDate));
+   	criteria.add(Restrictions.lt("last_state_change_datetime", nextDate));
+   	criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
+   	
+   	return criteria.list();	
+       }
     
 }

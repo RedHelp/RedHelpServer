@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-    <class name="org.redhelp.model.UserAdditionalAccountTypeModel" table="USER_ADDITIONAL_ACCOUNT_TYPE">
+    <class name="org.redhelp.model.UserAdditionalAccountTypeModel" table="user_additional_account_type">
         <id name="uaat_id" type="java.lang.Long">
             <column name="UAAT_ID" />
         </id>

@@ -77,7 +77,6 @@ public class BloodProfile {
 		blood_group_type, last_known_location_lat, last_known_location_long, birthDate);
 
 	UserBloodProfileModel blood_profile_received = bloodProfileDAO.saveOrUpdate(model_passed);
-	logger.debug("blood profile received after save:"+blood_profile_received.toString());
 
 	SaveBloodProfileResponse response = userBloodProfileToSaveBloodProfileRespone(blood_profile_received);
 
@@ -104,8 +103,6 @@ public class BloodProfile {
 	    logger.info("model_received is null");
 	    throw new InvalidRequestException("can't find model for b_p_id"+b_p_id);
 	}
-	logger.info(model_received.toString());
-	logger.info("response: "+response.toString());
 	return response;
     }
 
@@ -129,7 +126,6 @@ public class BloodProfile {
 	    logger.info("model_received is null");
 	    throw new InvalidRequestException("can't find model for b_p_id"+b_p_id);
 	}
-	logger.info(model_received.toString());
 
 	return model_received;
     }
@@ -149,7 +145,6 @@ public class BloodProfile {
     @Transactional
     public UserBloodProfileModel getBloodProfileModelViaUserAccount(UserAccountModel user_account) {
 	UserBloodProfileModel model_received = bloodProfileDAO.findByUid(user_account);
-	logger.info(model_received.toString());
 	return model_received;
     }
 
@@ -274,8 +269,10 @@ public class BloodProfile {
 
 
 	// Send notification
+	UserBloodProfileModel creatorBloodProfile = getBloodProfileModel(accessRequest.getRequester_b_p_id());
+	String creator_name = creatorBloodProfile.getUser_account().getName();
 	NotificationModel bloodProfileAccessNotification = NotificationsHelper.getBloodProfileAccessNotification(accessRequest.getRequester_b_p_id(),
-		accessRequest.getReceiver_b_p_id());
+		accessRequest.getReceiver_b_p_id(), creator_name);
 	notificationBo.addNotification(bloodProfileAccessNotification);
 
 	response.setAccessResponseType(GetBloodProfileAccessResponseType.REQUEST_POSTED_SUCCESSFULLY);
@@ -301,8 +298,10 @@ public class BloodProfile {
 
 
 	// Send notification to Requester
+	UserBloodProfileModel requesteeBloodProfile = getBloodProfileModel(respondRequest.getRequestee_b_p_id());
+	String requestee_name = requesteeBloodProfile.getUser_account().getName();
 	NotificationModel bloodProfileAccessNotification = NotificationsHelper.getBloodProfileAcceptedNotification(respondRequest.getRequester_b_p_id(),
-		respondRequest.getRequestee_b_p_id());
+		respondRequest.getRequestee_b_p_id(), requestee_name);
 	notificationBo.addNotification(bloodProfileAccessNotification);
 
 	response.setDone(true);
@@ -317,11 +316,10 @@ public class BloodProfile {
 	Long b_p_id = profileRequest.getB_p_id(); 
 
 	UserBloodProfileModel bloodProfileModel = getBloodProfileModel(b_p_id);
-	if(requester_b_p_id == b_p_id) {
+	if(requester_b_p_id.equals(b_p_id)) {
 	    response = createGetBloodProfileResponse(bloodProfileModel, GetBloodProfileType.OWN);
 	    return response;
-	}
-
+	} 
 	UserRelationshipType relationshipType = getUsersRelationshipType(requester_b_p_id, b_p_id);
 
 	// Mapping of user relationship type to client shown types.

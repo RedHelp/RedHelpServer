@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
  
 <hibernate-mapping>
-    <class name="org.redhelp.model.BloodRequestModel" table="BLOOD_REQUEST" >
+    <class name="org.redhelp.model.BloodRequestModel" table="blood_request" >
         <id name="b_r_id" type="java.lang.Long">
             <column name="B_R_ID" />
             <generator class="native" />
@@ -29,8 +29,9 @@
         <property name="creation_datetime" type="timestamp">
             <column name="CREATION_DATETIME" />
         </property>
-        
-        
+        <property name="last_state_change_datetime" type="timestamp">
+            <column name="LAST_STATE_CHANGE_DATETIME" />
+        </property>
         <property name="gps_location_lat" type="java.lang.Double">
             <column name="GPS_LOCATION_LAT"  />           
         </property>
@@ -59,6 +60,13 @@
         <property name="blood_requirement_type" column="BLOOD_REQUIREMENT_TYPE" >
             <type name="org.hibernate.type.EnumType" >
                 <param name="enumClass">org.redhelp.common.types.BloodRequirementType</param>
+                <param name="type">12</param>
+            </type>
+        </property> 
+        
+        <property name="bloodRequestState" column="STATE" >
+            <type name="org.hibernate.type.EnumType" >
+                <param name="enumClass">org.redhelp.types.BloodRequestState</param>
                 <param name="type">12</param>
             </type>
         </property> 

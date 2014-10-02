@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <hibernate-mapping>
-    <class name="org.redhelp.model.BloodGroupsModel" table="BLOOD_GROUPS" >
+    <class name="org.redhelp.model.BloodGroupsModel" table="blood_groups" >
         <id name="b_g_id" type="java.lang.Long">
             <column name="B_G_ID" />
             <generator class="native" />

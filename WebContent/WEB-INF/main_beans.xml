@@ -18,29 +18,15 @@
     </bean>
       
     <aop:aspectj-autoproxy />
-	
-	
+
 	<!-- This enables Annotation wiring -->
 	<context:annotation-config />
-	
-	
 	
 	<context:component-scan base-package="org.redhelp.resource" />
 	<context:component-scan base-package="org.redhelp.dbutil" /> 
 	<context:component-scan base-package="org.redhelp.dao" />
 	<context:component-scan base-package="org.redhelp.bo" />
-	<!-- 
-	<bean id="userAccountFactory" class="org.redhelp.factories.UserAccountFactory" />
-	
 
-	Stock Data Access Object
-	<bean id="userAccountDao" class="org.redhelp.daos.UserAccountDao">
-		<property name="sessionFactory" ref="sessionFactory" />
-	</bean>
-	<bean id="userBloodProfileDao" class="org.redhelp.daos.UserBloodProfileDao">
-        <property name="sessionFactory" ref="sessionFactory" />
-    </bean>
- -->
 	<!-- Database Configuration -->
 	<import resource="DataSource.xml" />
 	<import resource="Hibernate.xml" />

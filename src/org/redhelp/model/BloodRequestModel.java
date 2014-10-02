@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.Set;
 
 import org.redhelp.common.types.BloodRequirementType;
+import org.redhelp.types.BloodRequestState;
 //TODO add responses feature. 
 public class BloodRequestModel implements Comparable<BloodRequestModel>{
     
@@ -12,6 +13,7 @@ public class BloodRequestModel implements Comparable<BloodRequestModel>{
     private boolean active;
     private Long b_p_id;
     private Date creation_datetime;
+    private Date last_state_change_datetime;
     
     //Functional fields
     private String patient_name;
@@ -30,6 +32,7 @@ public class BloodRequestModel implements Comparable<BloodRequestModel>{
     private Double place_location_long;
     private String place_string;
     
+    private BloodRequestState bloodRequestState;
 
     
     
@@ -177,6 +180,22 @@ public class BloodRequestModel implements Comparable<BloodRequestModel>{
 	        + ", gps_location_lat=" + gps_location_lat + ", gps_location_long=" + gps_location_long
 	        + ", place_location_lat=" + place_location_lat + ", place_location_long=" + place_location_long
 	        + ", place_string=" + place_string + "]";
+    }
+
+    public BloodRequestState getBloodRequestState() {
+	return bloodRequestState;
+    }
+
+    public void setBloodRequestState(BloodRequestState bloodRequestState) {
+	this.bloodRequestState = bloodRequestState;
+    }
+
+    public Date getLast_state_change_datetime() {
+	return last_state_change_datetime;
+    }
+
+    public void setLast_state_change_datetime(Date last_state_change_datetime) {
+	this.last_state_change_datetime = last_state_change_datetime;
     }
 
     	

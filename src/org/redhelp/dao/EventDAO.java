@@ -25,8 +25,6 @@ public class EventDAO extends AbstractDAO<EventModel, Long>{
 	criteria.add(Restrictions.gt("location_long", southWestLocation.longitude));
 	criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
 	
-	if(criteria.list()!= null)
-	    logger.error(criteria.list().toString());
 	return criteria.list();	
     }
 }

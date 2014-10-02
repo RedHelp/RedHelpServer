@@ -46,9 +46,11 @@ public class SearchResource {
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     public String search(SearchRequest searchRequest) {
 	
-	String log_msg_request = String.format("searchRequest operation called, searchRequest:%s", searchRequest.toString());
+	String log_msg_request = String.format("searchOperation called, searchRequest:%s", searchRequest.toString());
 	logger.debug(log_msg_request);
-
+	
+	long startProfiler = System.nanoTime();  
+	
 	try {
 	    validateSearchRequest(searchRequest);
 	} catch (InvalidRequestException invalid_request_exception) {
@@ -56,20 +58,22 @@ public class SearchResource {
 	    logger.error(invalid_request_msg, invalid_request_exception);
 	    throw invalid_request_exception;
 	}
-
+	
 	SearchResponse searchResponse = null;
 	Gson gson = new Gson();
 
 	try {
-	    searchResponse = searchBo.search(searchRequest);
-	   
+	    searchResponse = searchBo.search(searchRequest);   
 	} catch (Exception e) {
 	    logger.error("Dependency exception:", e);
 	    throw new DependencyException(e.toString());
 	}
 	
 	String searchResponseString = gson.toJson(searchResponse);
+	long elapsedTime = System.nanoTime() - startProfiler;
+	double elapsedTimeSec = (double)elapsedTime/1000000000.0;
 	logger.debug(searchResponseString);
+	logger.info("Time taken by searchOperation:" + elapsedTimeSec);
 	return searchResponseString;
     
     }

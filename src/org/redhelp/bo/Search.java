@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
 import org.redhelp.common.BloodProfileSearchResponse;
 import org.redhelp.common.BloodRequestSearchResponse;
 import org.redhelp.common.EventSearchResponse;
@@ -19,22 +20,28 @@ import org.redhelp.model.BloodGroupsModel;
 import org.redhelp.model.BloodRequestModel;
 import org.redhelp.model.EventModel;
 import org.redhelp.model.UserBloodProfileModel;
+import org.redhelp.resource.SearchResource;
+import org.redhelp.util.LocationHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class Search {
+    
+    private Logger logger = Logger.getLogger(Search.class);
+    
+    
     @Autowired
     private BloodRequest bloodRequestBo;
-    
+
     @Autowired
     private BloodProfile bloodProfileBo;
-    
+
     @Autowired 
     private Event eventBo;
-    
-    
+
+
     @Transactional
     public SearchResponse search(SearchRequest searchRequest) 
     {
@@ -43,23 +50,39 @@ public class Search {
 	    searchResponse = searachViaBounds(searchRequest);
 	} else if(SearchRequestType.ALL.equals(searchRequest.getSearchRequestType())) {
 	    searchResponse = serachAll(searchRequest);
-	}
-	
-	
-	if(searchRequest.isRequire_user_location() && searchRequest.getB_p_id() != null) {
-	    UserBloodProfileModel bloodProfile  = bloodProfileBo.getBloodProfileModel(searchRequest.getB_p_id());
-	   
-	    Location blLocation = new Location();
-	    blLocation.latitude = bloodProfile.getLast_known_location_lat();
-	    blLocation.longitude = bloodProfile.getLast_known_location_long();
+	} else if(SearchRequestType.CITY_BASED.equals(searchRequest.getSearchRequestType())) {
+	    Location userLastKnownLocation = getUserLocation(searchRequest.getB_p_id());
+	    Location northEastLocation = new Location();
+	    Location southWestLocaiton = new Location();
 	    
-	    searchResponse.setUser_location_saved(blLocation);
+	    northEastLocation = LocationHelper.addDistanceToLocation(userLastKnownLocation, 0.22);
+	    southWestLocaiton = LocationHelper.subtractDistanceToLocation(userLastKnownLocation, 0.22);
+	    
+	    searchRequest.setNorthEastLocation(northEastLocation);
+	    searchRequest.setSouthWestLocation(southWestLocaiton);
+	    
+	    searchResponse = searachViaBounds(searchRequest);
 	}
-	
+
+
+	if(searchRequest.isRequire_user_location() && searchRequest.getB_p_id() != null) {
+
+	    Location userLastKnownLocation = getUserLocation(searchRequest.getB_p_id());
+	    searchResponse.setUser_location_saved(userLastKnownLocation);
+	}
+
 	return searchResponse;
-	
+
     }
-    
+    private Location getUserLocation(Long b_p_id) {
+	UserBloodProfileModel bloodProfile  = bloodProfileBo.getBloodProfileModel(b_p_id);
+
+	Location blLocation = new Location();
+	blLocation.latitude = bloodProfile.getLast_known_location_lat();
+	blLocation.longitude = bloodProfile.getLast_known_location_long();
+	return blLocation;
+    }
+
     private SearchResponse serachAll(SearchRequest searchRequest) {
 	SearchResponse searchResponse = new SearchResponse();
 	Set<SearchItemTypes> searchItems = searchRequest.getSearchItems();
@@ -73,14 +96,14 @@ public class Search {
 	    if(searchItem.equals(SearchItemTypes.BLOOD_PROFILE)) {
 		List<UserBloodProfileModel> list_blood_profiles = bloodProfileBo.searchAll();
 		if(list_blood_profiles != null)
-		    searchResponse.setSet_blood_profiles(searchResponseSetFromBloodProfileModel(list_blood_profiles));	
+		    searchResponse.setSet_blood_profiles(searchResponseSetFromBloodProfileModel(list_blood_profiles, searchRequest.getB_p_id()));	
 	    }
 	    if(searchItem.equals(SearchItemTypes.EVENTS)) {
 		List<EventModel> list_events = eventBo.searchAll();
 		if(list_events != null)
 		    searchResponse.setSet_events(searchResponseSetFromEventsModel(list_events));
 	    }
-	    
+
 	}
 	return searchResponse;
     }
@@ -102,7 +125,7 @@ public class Search {
 		List<UserBloodProfileModel> list_blood_profiles = bloodProfileBo.searchViaRange(searchRequest.getSouthWestLocation(), 
 			searchRequest.getNorthEastLocation());
 		if(list_blood_profiles != null)
-		    searchResponse.setSet_blood_profiles(searchResponseSetFromBloodProfileModel(list_blood_profiles));	
+		    searchResponse.setSet_blood_profiles(searchResponseSetFromBloodProfileModel(list_blood_profiles, searchRequest.getB_p_id()));	
 	    }
 	    if(searchItem.equals(SearchItemTypes.EVENTS)) {
 		List<EventModel> list_events = eventBo.searchViaRange(searchRequest.getSouthWestLocation(), 
@@ -110,29 +133,37 @@ public class Search {
 		if(list_events != null)
 		    searchResponse.setSet_events(searchResponseSetFromEventsModel(list_events));
 	    }
-	    
+
 	}
 	return searchResponse;
     }
-    
+
     private Set<BloodProfileSearchResponse> searchResponseSetFromBloodProfileModel(
-            List<UserBloodProfileModel> list_blood_profiles) {
+	    List<UserBloodProfileModel> list_blood_profiles, Long own_b_p_id) {
 	Set<BloodProfileSearchResponse> set_response = new HashSet<BloodProfileSearchResponse>();
 	for(UserBloodProfileModel blood_profile : list_blood_profiles) {
+	    
+	    
+	    if(blood_profile.getB_p_id() == own_b_p_id)
+		continue;
+	    
 	    BloodProfileSearchResponse bloodProfileSearchResponse = new BloodProfileSearchResponse();
 	    Location location = new Location();
 	    location.latitude = blood_profile.getLast_known_location_lat();
 	    location.longitude = blood_profile.getLast_known_location_long();
-	    
+
 	    bloodProfileSearchResponse.setLast_updated_location(location);
 	    bloodProfileSearchResponse.setTitle(blood_profile.getUser_account().getName());
 	    bloodProfileSearchResponse.setB_p_id(blood_profile.getB_p_id());
 	    if(blood_profile.getBlood_group_type() != null)
 		bloodProfileSearchResponse.setBlood_grp(blood_profile.getBlood_group_type().toString());
 	    
+	    if(blood_profile.getUser_account().getUser_image() != null)
+		bloodProfileSearchResponse.setUser_image(blood_profile.getUser_account().getUser_image());
+	    
 	    set_response.add(bloodProfileSearchResponse);
 	}
-	
+
 	return set_response;
     }
 
@@ -143,17 +174,17 @@ public class Search {
 	    Location location = new Location();
 	    location.latitude = event.getLocation_lat();
 	    location.longitude = event.getLocation_long();
-	    
+
 	    eventSearchResponse.setLast_updated_location(location);
 	    eventSearchResponse.setTitle(event.getName());
 	    eventSearchResponse.setVenue(event.getLocation_address());
 	    eventSearchResponse.setE_id(event.getE_id());
 	    String master_start_datetime = DateTimeHelper.convertJavaDateToString(event.getMaster_start_datetime(),
-	   		JodaTimeFormatters.dateFormatter);
+		    JodaTimeFormatters.dateFormatter);
 	    eventSearchResponse.setScheduled_date_time(master_start_datetime);
 	    set_response.add(eventSearchResponse);
 	}
-	
+
 	return set_response;
     }
 
@@ -162,13 +193,13 @@ public class Search {
 	for(BloodRequestModel bloodRequest : list_blood_requests) {
 	    BloodRequestSearchResponse bloodRequestSearchResponse = new BloodRequestSearchResponse();
 	    Location location = new Location();
-	    location.latitude = bloodRequest.getGps_location_lat();
-	    location.longitude =  bloodRequest.getGps_location_long(); 
+	    location.latitude = bloodRequest.getPlace_location_lat();
+	    location.longitude =  bloodRequest.getPlace_location_long();
 	    bloodRequestSearchResponse.setlocation(location);
 	    bloodRequestSearchResponse.setSummary(bloodRequest.getDescription());
 	    bloodRequestSearchResponse.setB_r_id(bloodRequest.getB_r_id());
 	    bloodRequestSearchResponse.setTitle(bloodRequest.getPatient_name());
-	    
+
 	    String blood_grps_str = null;
 	    for(BloodGroupsModel bloodGroupsModel: bloodRequest.getSet_blood_group()) {
 		BloodGroupType groupType = bloodGroupsModel.getBloodGroupTypeEnum();
@@ -176,11 +207,11 @@ public class Search {
 		    blood_grps_str = groupType.toString();
 		else
 		    blood_grps_str = blood_grps_str + ", " + groupType.toString();
- 	    }
+	    }
 	    bloodRequestSearchResponse.setBlood_grps_requested_str(blood_grps_str);
 	    set_response.add(bloodRequestSearchResponse);
 	}
-	
+
 	return set_response;
     }
 }

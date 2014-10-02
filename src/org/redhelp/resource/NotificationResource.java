@@ -71,7 +71,7 @@ public class NotificationResource {
 		
 	Gson gson = new Gson();
 	String json_get_response = gson.toJson(get_new_notifications_response);
-	logger.debug("Response "+json_get_response);
+	//logger.debug("Response "+json_get_response);
 	return json_get_response;
     }
     

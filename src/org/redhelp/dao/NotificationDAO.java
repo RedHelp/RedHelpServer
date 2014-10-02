@@ -36,9 +36,6 @@ public class NotificationDAO extends AbstractDAO<NotificationModel, Long> {
 	
 	criteria.add(Restrictions.eq("read", false));
 	criteria.add(Restrictions.eq("b_p_id", b_p_id));
-	
-	if(criteria.list()!= null)
-	    logger.debug(criteria.list().toString());
 	return criteria.list();	
     }
     

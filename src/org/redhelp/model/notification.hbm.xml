@@ -3,7 +3,7 @@
 "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
  
 <hibernate-mapping>
-    <class name="org.redhelp.model.NotificationModel" table="NOTIFICATIONS" >
+    <class name="org.redhelp.model.NotificationModel" table="notifications" >
         <id name="n_id" type="java.lang.Long">
             <column name="N_ID" />
             <generator class="native" />
